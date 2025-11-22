@@ -26,26 +26,46 @@ class Linear:
         :return: Output Z with shape (*, out_features)
         
         Handles arbitrary batch dimensions like PyTorch
-        """
-        # TODO: Implement forward pass
-        
+        """    
         # Store input for backward pass
         self.A = A
         
-        raise NotImplementedError
+        # Store original shape
+        self.input_shape = A.shape
+        
+        # Flatten to 2D: (batch_size, in_features)
+        batch_size = np.prod(A.shape[:-1])
+        A_2d = A.reshape(batch_size, -1)
+        
+        # Compute Z = A @ W^T + b
+        Z_2d = A_2d @ self.W.T + self.b
+        
+        # Reshape back to original dimensions with out_features as last dim
+        output_shape = self.input_shape[:-1] + (self.W.shape[0],)
+        Z = Z_2d.reshape(output_shape)
+        
+        return Z
 
     def backward(self, dLdZ):
         """
         :param dLdZ: Gradient of loss wrt output Z (*, out_features)
         :return: Gradient of loss wrt input A (*, in_features)
         """
-        # TODO: Implement backward pass
+        # Store original shape of gradient
+        grad_shape = dLdZ.shape
+        
+        # Flatten gradient to 2D
+        batch_size = np.prod(dLdZ.shape[:-1])
+        dLdZ_2d = dLdZ.reshape(batch_size, -1)
+
+        # Flatten input to 2D
+        A_2d = self.A.reshape(batch_size, -1)
 
         # Compute gradients (refer to the equations in the writeup)
-        self.dLdA = NotImplementedError
-        self.dLdW = NotImplementedError
-        self.dLdb = NotImplementedError
-        self.dLdA = NotImplementedError
+        self.dLdA = dLdZ_2d @ self.W
+        self.dLdW = dLdZ_2d.T @ A_2d
+        self.dLdb = np.sum(dLdZ_2d, axis=0)
+        self.dLdA = self.dLdA.reshape(self.input_shape)
         
         # Return gradient of loss wrt input
-        raise NotImplementedError
+        return self.dLdA
