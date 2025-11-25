@@ -25,8 +25,21 @@ def PadMask(padded_input, input_lengths):
             - padding positions are marked with True 
             - non-padding positions are marked with False.
     """
-    # TODO: Implement PadMask
-    raise NotImplementedError # Remove once implemented
+    # Get batch size and sequence length
+    N = padded_input.shape[0]
+    T = padded_input.shape[1]
+    
+    # Create a range tensor [0, 1, 2, ..., T-1] of shape (1, T)
+    positions = torch.arange(T, device=padded_input.device).unsqueeze(0)  # (1, T)
+    
+    # Expand input_lengths to shape (N, 1) for broadcasting
+    lengths = input_lengths.unsqueeze(1)  # (N, 1)
+    
+    # Compare positions with lengths
+    # positions >= lengths will be True for padding positions
+    mask = positions >= lengths  # (N, T)
+    
+    return mask
 
 ''' 
 TODO: Implement this function.
@@ -51,6 +64,19 @@ def CausalMask(padded_input):
             - non-causal positions (don't attend to) are marked with True 
             - causal positions (can attend to) are marked with False.
     """
-    # TODO: Implement CausalMask
-    raise NotImplementedError # Remove once implemented
-
+    # Get sequence length
+    T = padded_input.shape[1]
+    
+    # Create a lower triangular matrix of ones (including diagonal)
+    # torch.tril creates a lower triangular matrix
+    # We want: positions on and below diagonal = 0 (can attend)
+    #          positions above diagonal = 1 (cannot attend)
+    
+    # Method 1: Using torch.triu (upper triangular)
+    # Create upper triangular matrix (excluding diagonal) - these are positions to mask
+    mask = torch.triu(torch.ones(T, T, device=padded_input.device), diagonal=1).bool()
+    
+    # Method 2 (alternative, same result):
+    # mask = ~torch.tril(torch.ones(T, T, device=padded_input.device)).bool()
+    
+    return mask
