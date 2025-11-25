@@ -20,7 +20,7 @@ class Softmax:
         if self.dim > len(Z.shape) or self.dim < -len(Z.shape):
             raise ValueError("Dimension to apply softmax to is greater than the number of dimensions in Z")
         
-        # TODO: Implement forward pass
+        # Implement forward pass
         # Compute the softmax in a numerically stable way
         # Apply it to the dimension specified by the `dim` parameter
         Z_shifted = Z - np.max(Z, axis=self.dim, keepdims=True)

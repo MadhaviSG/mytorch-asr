@@ -49,8 +49,8 @@ class LMTrainer(BaseTrainer):
 
     def __init__(self, model, tokenizer, config, run_name, config_file, device=None):
         super().__init__(model, tokenizer, config, run_name, config_file, device)
-        # TODO: Implement the __init__ method
-        # TODO: Initialize the criterion
+        # Implement the __init__ method
+        # Initialize the criterion
         # How would you set the ignore_index? 
         # Use value in config to set the label_smoothing argument
         self.criterion = nn.CrossEntropyLoss(
@@ -249,13 +249,13 @@ class LMTrainer(BaseTrainer):
 
         for epoch in range(self.current_epoch, self.current_epoch + epochs):
             
-            # TODO: Train for one epoch
+            # Train for one epoch
             train_metrics, train_attn = self._train_epoch(train_dataloader)
             
-            # TODO: Validate
+            # Validate
             val_metrics, val_attn = self._validate_epoch(val_dataloader)
 
-            # TODO: Generate with the validation set
+            # Generate with the validation set
             gen_results = self.generate(val_dataloader)
             
             # Step ReduceLROnPlateau scheduler with validation loss
@@ -407,7 +407,7 @@ class LMTrainer(BaseTrainer):
                     temperature=generation_config.get('temperature', 1.0),
                     repeat_penalty=generation_config.get('repeat_penalty', 1.0)
                 )
-                
+
         # Post-process sequences (trim upto EOS token)
         processed_seqs = generator.post_process_sequence(seqs, self.tokenizer)
 
