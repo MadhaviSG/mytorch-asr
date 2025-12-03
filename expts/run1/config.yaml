@@ -1,0 +1,142 @@
+
+Name: "HW4-P2_mgulavan"
+
+###### Tokenization ------------------------------------------------------------
+tokenization:
+  token_type: "char"  # Character-level works well for CER metric
+  token_map:
+      'char': 'hw4lib/data/tokenizer_jsons/tokenizer_char.json'
+      '1k': 'hw4lib/data/tokenizer_jsons/tokenizer_1000.json'
+      '5k': 'hw4lib/data/tokenizer_jsons/tokenizer_5000.json'
+      '10k': 'hw4lib/data/tokenizer_jsons/tokenizer_10000.json'
+
+###### Dataset -----------------------------------------------------------------
+data:
+  root: "/ocean/projects/cis240101p/mzhang23/TA/HW4/hw4_data/hw4p2_data"
+  train_partition: "train-clean-100"
+  val_partition: "dev-clean"
+  test_partition: "test-clean"
+  subset: null
+  batch_size: 32
+  NUM_WORKERS: 4
+  norm: 'global_mvn'
+  num_feats: 80
+
+  ###### SpecAugment ---------------------------------------------------------------
+  specaug: True
+  specaug_conf:
+    apply_freq_mask: True
+    freq_mask_width_range: 27
+    num_freq_mask: 2
+    apply_time_mask: True
+    time_mask_width_range: 100
+    num_time_mask: 2
+
+###### Network Specs -------------------------------------------------------------
+model:
+  # Speech embedding parameters
+  input_dim: 80
+  time_reduction: 4  # Reduce to 4 for efficiency
+  reduction_method: 'both'  # Use both conv + LSTM
+
+  # Architecture parameters - REDUCED FOR 30M LIMIT
+  d_model: 256  # Reduce from 512
+  num_encoder_layers: 6  # Keep depth
+  num_decoder_layers: 6
+  num_encoder_heads: 8  # Keep heads
+  num_decoder_heads: 8
+  d_ff_encoder: 1024  # Reduce FFN size
+  d_ff_decoder: 1024
+  skip_encoder_pe: True
+  skip_decoder_pe: False
+
+  # Common parameters
+  dropout: 0.1
+  layer_drop_rate: 0.0
+  weight_tying: True  # CRITICAL for staying under 30M
+
+###### Common Training Parameters ------------------------------------------------
+training:
+  use_wandb: True
+  wandb_run_id: "none"
+  resume: True
+  gradient_accumulation_steps: 2  # Effective batch = 64
+  wandb_project: "hw4-p2"
+
+###### Loss ----------------------------------------------------------------------
+loss:
+  label_smoothing: 0.1
+  ctc_weight: 0.3
+
+###### Optimizer -----------------------------------------------------------------
+optimizer:
+  name: "adamw"
+  lr: 0.0005
+
+  weight_decay: 0.0001
+
+  param_groups:
+    - name: self_attn
+      patterns: ["self_attn"]
+      lr: 0.0004
+      layer_decay:
+        enabled: False
+        decay_rate: 0.8
+
+    - name: ffn
+      patterns: ["ffn"]
+      lr: 0.0004
+      layer_decay:
+        enabled: False
+        decay_rate: 0.8
+
+  layer_decay:
+    enabled: False
+    decay_rate: 0.75
+
+  sgd:
+    momentum: 0.9
+    nesterov: True
+    dampening: 0
+
+  adam:
+    betas: [0.9, 0.98]
+    eps: 1.0e-9
+    amsgrad: False
+
+  adamw:
+    betas: [0.9, 0.98]
+    eps: 1.0e-9
+    amsgrad: False
+
+###### Scheduler -----------------------------------------------------------------
+scheduler:
+  name: "cosine_warm"
+
+  reduce_lr:
+    mode: "min"
+    factor: 0.5
+    patience: 3
+    threshold: 0.001
+    threshold_mode: "rel"
+    cooldown: 0
+    min_lr: 1.0e-6
+    eps: 1e-8
+
+  cosine:
+    T_max: 30
+    eta_min: 1.0e-6
+    last_epoch: -1
+
+  cosine_warm:
+    T_0: 10
+    T_mult: 2
+    eta_min: 1.0e-6
+    last_epoch: -1
+
+  warmup:
+    enabled: True
+    type: "linear"
+    epochs: 3
+    start_factor: 0.1
+    end_factor: 1.0
